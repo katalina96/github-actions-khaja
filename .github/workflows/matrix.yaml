@@ -1,0 +1,36 @@
+name: Matrix
+on: workflow_dispatch
+permissions:
+  contents: read
+  checks: write
+jobs:
+  manual:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      #matrix says "test multiple configurations", while fail-fast: false says "even if one configuration fails, keep testing the others."
+      matrix:
+        java: [17, 21]
+    steps:
+        - name: Git Checkout 
+          uses: actions/checkout@v5 
+          with:
+            repository: spring-projects/spring-petclinic
+            ref: main
+        - name: Setup Java
+          uses: actions/setup-java@v5
+          with:
+            distribution: 'temurin'
+            java-version: ${{ matrix.java}}
+        - name: Build package 
+          run: mvn ${{ vars.GOAL }}
+        - name: Publish Test Results
+          uses: EnricoMi/publish-unit-test-result-action@v2
+          with:
+            files: |
+              **/target/surefire-reports/*.xml
+        - name: Uploading packaged jar files
+          uses: actions/upload-artifact@v4
+          with:
+            name: spring-petclinic-jar
+            path: '**/target/*.jar'
