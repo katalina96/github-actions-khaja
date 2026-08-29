@@ -1,4 +1,4 @@
-name: Complete Dotnet Project
+name: Complate Dotnet Project
 
 on:
   pull_request:
@@ -14,76 +14,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Setup .NET
+
       - name: Setup dotnet
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '9.0.x'
 
-      # 2. Checkout source code
       - name: Git Checkout
         uses: actions/checkout@v5
         with:
           repository: KhajasCICDSamples/nopCommerce-sep25
           ref: develop
 
-      # 3. Restore dependencies
       - name: Restore
         run: dotnet restore src/Presentation/Nop.Web/Nop.Web.csproj
 
-      # 4. Build
       - name: Build
         run: dotnet build --configuration Release --no-restore src/Presentation/Nop.Web/Nop.Web.csproj
 
-      # 5. Run tests and generate TRX
       - name: Test
         run: |
           dotnet test \
             --configuration Release \
-            --no-build \
-            --logger:"trx;LogFilePrefix=testResults" \
-            --results-directory TestResults \
+            --logger:"trx;LogFileName=testResults.trx" \
+            --results-directory "${{ github.workspace }}/TestResults" \
             src/Tests/Nop.Tests/Nop.Tests.csproj
 
-      # 6. Install ReportGenerator
-      - name: Install ReportGenerator
-        if: always()
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
-      # 7. Convert TRX to HTML and JUnit
-      - name: Generate HTML and JUnit reports
+      - name: Check test results
         if: always()
         run: |
-          reportgenerator \
-            "-reports:TestResults/*.trx" \
-            "-targetdir:TestResults/Report" \
-            "-reporttypes:Html;JUnit"
+          echo "=== TestResults ==="
+          find TestResults -type f -print
 
-      # 8. Upload test results
-      - name: Upload test results
+      - name: Upload TRX results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ github.run_number }}
-          path: |
-            TestResults/**/*.trx
-            TestResults/Report/**
+          path: TestResults/**/*.trx
 
-      # 9. Publish application
       - name: Publish
         run: |
           dotnet publish \
             --configuration Release \
-            --no-build \
             src/Presentation/Nop.Web/Nop.Web.csproj \
             --output published
 
-      # 10. Create ZIP
       - name: Create deployment ZIP
         run: |
           zip -r "${{ github.event.repository.name }}-${{ github.run_number }}.zip" published
 
-      # 11. Upload ZIP artifact
       - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
         with:
