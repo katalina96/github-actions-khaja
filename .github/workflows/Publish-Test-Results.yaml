@@ -1,5 +1,8 @@
 name: GitHub Action to Publish Test Results
 on: workflow_dispatch
+permissions:
+  contents: read
+  checks: write
 jobs:
   manual:
     runs-on: ubuntu-24.04
