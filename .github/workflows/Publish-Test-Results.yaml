@@ -1,0 +1,23 @@
+name: GitHub Action to Publish Test Results
+on: workflow_dispatch
+jobs:
+  manual:
+    runs-on: ubuntu-24.04
+    steps:
+        - name: Git Checkout 
+          uses: actions/checkout@v5 
+          with:
+            repository: spring-projects/spring-petclinic
+            ref: main
+        - name: Setup Java
+          uses: actions/setup-java@v5
+          with:
+            distribution: 'temurin'
+            java-version: '21'
+        - name: Build package 
+          run: mvn ${{ vars.GOAL }}
+        - name: Publish Test Results
+          uses: EnricoMi/publish-unit-test-result-action@v2
+          with:
+            files: |
+              **/target/surefire-reports/*.xml
